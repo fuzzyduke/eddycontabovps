@@ -29,12 +29,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      # Parameterized via .env
-      - "traefik.http.routers.hello1.rule=Host(`hello1.valhallala.com`)"
-      - "traefik.http.routers.hello1.entrypoints=websecure"
-      - "traefik.http.routers.hello1.tls=true"
-      - "traefik.http.routers.hello1.tls.certresolver=letsencrypt"
-      - "traefik.http.services.hello1.loadbalancer.server.port=80"
+      - "traefik.http.routers.hello1-router.rule=Host(`hello1.valhallala.com`)"
+      - "traefik.http.routers.hello1-router.entrypoints=websecure"
+      - "traefik.http.routers.hello1-router.tls=true"
+      - "traefik.http.routers.hello1-router.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.hello1-router.service=hello1-service"
+      - "traefik.http.services.hello1-service.loadbalancer.server.port=80"
 
     # 💾 Storage: Use named volumes for persistence
     volumes:
