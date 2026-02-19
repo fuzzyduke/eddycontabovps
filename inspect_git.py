@@ -1,6 +1,6 @@
 import paramiko
 
-def inspect_vps():
+def inspect_git_drift():
     ip = "167.86.84.248"
     user = "root"
     pw = "2kPJXKNB7U3S"
@@ -11,10 +11,10 @@ def inspect_vps():
         ssh.connect(ip, username=user, password=pw)
         
         commands = [
-            'ls -la /srv/infra/traefik',
-            'docker inspect traefik --format "{{json .Config.Env}}"',
-            'docker inspect traefik --format "{{json .Config.Image}}"',
-            'docker version --format "Server: {{.Server.APIVersion}}, Client: {{.Client.APIVersion}}"'
+            'cd /srv && git status',
+            'cd /srv && git diff',
+            'cd /srv && git log -1',
+            'cd /srv && git config --list | grep autocrlf'
         ]
         
         for cmd in commands:
@@ -28,4 +28,4 @@ def inspect_vps():
         print(f"ERROR: {e}")
 
 if __name__ == "__main__":
-    inspect_vps()
+    inspect_git_drift()

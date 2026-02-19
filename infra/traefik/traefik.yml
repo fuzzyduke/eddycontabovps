@@ -1,6 +1,8 @@
 api:
   dashboard: true
-  debug: false
+  debug: true
+
+ping: {}
 
 entryPoints:
   web:
