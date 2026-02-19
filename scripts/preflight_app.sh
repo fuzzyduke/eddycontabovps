@@ -1,5 +1,7 @@
 #!/bin/bash
-# Preflight script to validate app configuration before pushing
+set -euo pipefail
+
+# Hardened Preflight script to validate app configuration before pushing
 # Usage: ./scripts/preflight_app.sh <APP_NAME>
 
 if [ "$#" -ne 1 ]; then
@@ -15,71 +17,72 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
-echo "🔍 Running preflight for $APP_NAME..."
-FAILED=0
+echo "🔍 Running hardened preflight for $APP_NAME..."
+ERRORS=()
 
-# 1. Check for host port exposure
-if grep -q "ports:" "$COMPOSE_FILE"; then
-    # Check if any port mapping is actually defined and not commented out
-    if grep -E "^ +ports:" "$COMPOSE_FILE"; then
-        echo "❌ Error: Host port exposure ('ports:') detected. This is forbidden."
-        FAILED=1
-    fi
+# 1. Check for host port exposure (Strict detection)
+# Matches "^ +ports:" (uncommented block)
+if grep -E "^ +ports:" "$COMPOSE_FILE" > /dev/null; then
+    ERRORS+=("Host port exposure ('ports:') detected. Host ports are forbidden.")
 fi
 
 # 2. Check for latest image tag
 if grep -q "image:.*latest" "$COMPOSE_FILE"; then
-    echo "❌ Error: 'latest' tag detected in image. Please use a pinned version."
-    FAILED=1
+    ERRORS+=("'latest' tag detected in image. Please use a pinned version.")
 fi
 
 # 3. Check for resource limits
 if ! grep -q "mem_limit:" "$COMPOSE_FILE"; then
-    echo "❌ Error: 'mem_limit' is missing."
-    FAILED=1
+    ERRORS+=("'mem_limit' is missing.")
 fi
 if ! grep -q "cpus:" "$COMPOSE_FILE"; then
-    echo "❌ Error: 'cpus' limit is missing."
-    FAILED=1
+    ERRORS+=("'cpus' limit is missing.")
 fi
 
 # 4. Check for healthcheck
 if ! grep -q "healthcheck:" "$COMPOSE_FILE"; then
-    echo "❌ Error: 'healthcheck' section is missing."
-    FAILED=1
+    ERRORS+=("'healthcheck' section is missing.")
 fi
 
 # 5. Check for correct env_file path
 EXPECTED_ENV="/srv/secrets/$APP_NAME.env"
 if ! grep -q "env_file: $EXPECTED_ENV" "$COMPOSE_FILE"; then
-    echo "❌ Error: 'env_file' must be exactly $EXPECTED_ENV"
-    FAILED=1
+    ERRORS+=("'env_file' must be exactly $EXPECTED_ENV")
 fi
 
-# 6. Check for Traefik backtick rule
-if ! grep -q "traefik.http.routers.$APP_NAME.rule=Host(\`.*\`)" "$COMPOSE_FILE"; then
-    echo "❌ Error: Traefik rule for $APP_NAME must use backticks in Host rule."
-    FAILED=1
+# 6. Check for Traefik backtick rule (Robust validation)
+# Ensures exact router name and backticked Host rule
+if ! grep -F "traefik.http.routers.$APP_NAME.rule=Host(\`" "$COMPOSE_FILE" > /dev/null; then
+    ERRORS+=("Traefik rule for $APP_NAME is missing or incorrectly formatted. Must use Host(\`...\`) with backticks.")
 fi
 
-# 7. Check for proxy network attachment
-if ! grep -q "\- proxy" "$COMPOSE_FILE"; then
-    echo "❌ Error: App must be attached to the 'proxy' network."
-    FAILED=1
+# 7. Check for proxy network attachment (Two-tiered)
+# a) Service-level attachment
+if ! grep -E "^ +networks:" -A 5 "$COMPOSE_FILE" | grep -q "\- proxy"; then
+    ERRORS+=("Service is not attached to the 'proxy' network.")
+fi
+# b) Top-level external declaration
+if ! grep -A 5 "^networks:" "$COMPOSE_FILE" | grep -A 2 "proxy:" | grep -q "external: true"; then
+    ERRORS+=("Top-level 'proxy' network must be declared as 'external: true'.")
 fi
 
 # 8. docker compose config check
 echo "⏳ Validating YAML syntax..."
-docker compose -f "$COMPOSE_FILE" config > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    echo "❌ Error: 'docker compose config' failed."
-    FAILED=1
+if ! docker compose -f "$COMPOSE_FILE" config > /dev/null 2>&1; then
+    ERRORS+=("'docker compose config' failed. Check YAML indentation.")
 fi
 
-if [ $FAILED -eq 0 ]; then
+# Final Report
+if [ ${#ERRORS[@]} -eq 0 ]; then
     echo "✅ Preflight PASSED for $APP_NAME."
     exit 0
 else
-    echo "❌ Preflight FAILED for $APP_NAME. Please fix errors before pushing."
+    echo "------------------------------------------------------------"
+    echo "❌ Preflight FAILED for $APP_NAME with ${#ERRORS[@]} error(s):"
+    for err in "${ERRORS[@]}"; do
+        echo "  - $err"
+    done
+    echo "------------------------------------------------------------"
+    echo "Please fix the above errors before pushing."
     exit 1
 fi
