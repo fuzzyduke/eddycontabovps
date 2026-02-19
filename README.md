@@ -27,4 +27,17 @@ This repository is the **Source of Truth** for the Eddy Contabo VPS. It uses a f
 - **Upgrades**: Versioned upgrades are handled via `UPGRADE.md` scripts.
 
 ## 🛠️ Adding New Apps
-See [DEPLOYMENT_RULES.md](./docs/DEPLOYMENT_RULES.md) for the contract and [/apps/template](./apps/template) for blueprints.
+
+To publish a new application to the platform, follow the **New App Deploy Pipeline**:
+
+1.  **Read the SOP**: [NEW_APP_SOP.md](./docs/NEW_APP_SOP.md) for hard constraints and commands.
+2.  **Follow the Checklist**: Use [PUBLISH_NEW_APP.md](./docs/PUBLISH_NEW_APP.md) as your fill-in-the-blanks deployment tracking.
+3.  **Use the Helper**:
+    ```bash
+    ./scripts/new_app_scaffold.sh <APP_NAME> <SUBDOMAIN> <INTERNAL_PORT>
+    ```
+
+### Important rules
+- **Secrets**: Must be added to the private **Bible** repo under `vps/<APP_NAME>.env`.
+- **Infrastructure**: Use pinned image tags, set resource limits, and attach to the `proxy` network.
+- **Verification**: Always verify with `curl -I` and Traefik logs after deployment.
