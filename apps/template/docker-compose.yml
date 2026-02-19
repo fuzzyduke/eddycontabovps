@@ -1,0 +1,49 @@
+services:
+  app-name:
+    container_name: app-name-service
+    image: nginx:1.27-alpine # Alpine includes wget for healthchecks
+    restart: unless-stopped
+    env_file: .env
+
+    # 🔗 Network: Attach to external Traefik proxy
+    networks:
+      - proxy
+
+    # 🔒 Security: No host ports exposed.
+    # ports:
+    #   - "8080:80" # BLOCKED
+
+    # 🚀 Resources: Compose-enforced limits
+    mem_limit: 256m
+    cpus: 0.5
+
+    # ✅ Health: Works out-of-the-box in Alpine
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:80/ >/dev/null 2>&1 || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # 🗺️ Traefik: Proxy routing & TLS
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # Parameterized via .env
+      - "traefik.http.routers.app-name.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.app-name.entrypoints=websecure"
+      - "traefik.http.routers.app-name.tls=true"
+      - "traefik.http.routers.app-name.tls.certresolver=letsencrypt"
+      - "traefik.http.services.app-name.loadbalancer.server.port=80"
+
+    # 💾 Storage: Use named volumes for persistence
+    volumes:
+      - app-data:/usr/share/nginx/html
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  app-data:
+    name: app-name-data
