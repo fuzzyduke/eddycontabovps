@@ -18,6 +18,7 @@ services:
       - ./config:/etc/traefik/config
     environment:
       - TZ=UTC
+      - "DOCKER_API_VERSION=1.44"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=websecure"
