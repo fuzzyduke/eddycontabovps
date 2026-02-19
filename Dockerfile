@@ -49,5 +49,5 @@ EXPOSE 18789
 
 # Start the gateway
 # --allow-unconfigured is useful for initial setup
-# --bind lan allows it to be reachable via Dokploy's proxy
+# --bind lan allows it to be reachable via the network proxy
 CMD ["node", "openclaw.mjs", "gateway", "--allow-unconfigured", "--bind", "lan"]
