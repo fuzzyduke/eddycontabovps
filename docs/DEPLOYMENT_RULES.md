@@ -1,30 +1,27 @@
-# Eddy VPS Deployment Rules
+# Eddy VPS Deployment Rules (Hardened)
 
 ## 1. Repository Contract
-Every app located in `/apps/<app-name>` must follow these rules:
-
+Every app in `/apps/<app-name>` must follow these rules:
 - **Isolation**: Each app MUST have its own `docker-compose.yml`.
-- **Networking**: Each app MUST join the `proxy` network for Traefik routing.
-- **Resources**: Each service MUST have `deploy.resources.limits` (memory and cpu).
-- **Persistence**: Use named volumes or paths within the app directory.
-- **Port Handling**: Do NOT expose ports to the host directly. Use Traefik routing.
+- **Resources**: Each service MUST have `deploy.resources.limits`.
+- **Health**: Containers SHOULD have a `healthcheck`. If not, set `ALLOW_NO_HEALTHCHECK=1` or rely on container state monitoring.
 
-## 2. Infrastructure Changes
-- Traefik and global network configs live in `/infra`.
-- Changes here are applied automatically by `deploy.sh`.
-- Extreme caution: Validation is mandatory.
+## 2. Infrastructure
+- Shared configs live in `/infra`.
+- Traefik manages all host-level routing.
 
 ## 3. Automated Hardened Upgrades (`upgrade.sh`)
-- If an app requires a manual step, provide an executable `upgrade.sh`.
-- **Safety Scanner**: The engine scans for blacklisted commands (`docker system`, `rm -rf /`, etc.).
-- **Execution**: Runs BEFORE `docker compose up`. Failure triggers an automatic rollback of the stack.
+- If manual steps are needed, provide an **executable** `upgrade.sh`.
+- **Opt-in**: Upgrades only run if `RUN_UPGRADES=1` is set in the environment.
+- **Safety**: The engine scans for blacklisted commands (`docker system prune`, etc.).
+- **Rollback**: Failure in `upgrade.sh` triggers an automatic rollback.
 
 ## 4. Git as Source of Truth
-- The VPS state is strictly reset to `origin/main` on every push.
-- **Drift Protection**: Deployment fails if uncommitted local changes exist on the VPS.
+- Local changes on the VPS are considered "drift" and will block deployments.
+- The VPS state is strictly reset to `origin/master` on every push.
 
-## 5. Resource Safety & Stability
-- **Pre-checks**: Deployment aborts if RAM < 1GB or Disk Space < 10% free.
-- **Rollback**: Failure in validation, upgrade, or health check triggers an automatic rollback to the last known good commit.
-- **No Downtime**: Only changed stacks are redeployed.
-
+## 5. Deployment Safety
+- **Bootstrap**: First-run deploys all content in `/infra` and `/apps`.
+- **Interruption Protection**: The `.deploying` flag blocks new runs if the previous one crashed. Overridable with `FORCE_DEPLOY=1`.
+- **Resource Checks**: Aborts if RAM < 1GB or Disk > 90% full.
+- **Rollback**: Automatically checks out the previous successful state of a stack upon failure.
