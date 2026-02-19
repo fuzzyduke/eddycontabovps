@@ -19,7 +19,6 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     network: proxy
-    apiVersion: "1.44"
   file:
     directory: /etc/traefik/config
     watch: true
