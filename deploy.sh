@@ -1,6 +1,6 @@
 #!/bin/bash
 # /srv/deploy.sh - Production-Hardened Deployment Engine for Eddy VPS
-# Patched version: v1.1.0
+# Patched version: v1.1.1
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -88,6 +88,17 @@ check_resources() {
     local DISK_USAGE=$(df / --output=pcent | tail -1 | tr -dc '0-9')
     if [ "$DISK_USAGE" -gt 90 ]; then
         error "Insufficient Disk Space: ${DISK_USAGE}% used. Need > 10% free."
+    fi
+
+    # Swap Check (%)
+    local SWAP_TOTAL=$(awk '/SwapTotal/ {print $2}' /proc/meminfo)
+    if [ "$SWAP_TOTAL" -gt 0 ]; then
+        local SWAP_FREE=$(awk '/SwapFree/ {print $2}' /proc/meminfo)
+        local SWAP_USED_PCT=$(( (SWAP_TOTAL - SWAP_FREE) * 100 / SWAP_TOTAL ))
+        if [ "$SWAP_USED_PCT" -gt 70 ]; then
+            error "High Swap Usage: ${SWAP_USED_PCT}%. Potential OOM risk."
+        fi
+        log "Swap usage: ${SWAP_USED_PCT}%."
     fi
     log "Resource check passed."
 }

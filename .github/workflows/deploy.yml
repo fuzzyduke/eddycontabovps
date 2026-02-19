@@ -30,8 +30,9 @@ jobs:
             cd /srv
             git fetch origin master
             git reset --hard origin/master
-            RUN_UPGRADES=1 ./deploy.sh
+            ./deploy.sh
     env:
-      RUN_UPGRADES: 1 # Deployments from GitHub Action default to allowing upgrades
+      RUN_UPGRADES: 0 # Deployments from GitHub Action default to SKIPPING upgrades for safety
+
       FORCE_DEPLOY: 0
       ALLOW_NO_HEALTHCHECK: 0
