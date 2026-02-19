@@ -1,6 +1,6 @@
 import paramiko
 
-def inspect_git_drift():
+def init_secrets_infra():
     ip = "167.86.84.248"
     user = "root"
     pw = "2kPJXKNB7U3S"
@@ -11,21 +11,19 @@ def inspect_git_drift():
         ssh.connect(ip, username=user, password=pw)
         
         commands = [
-            'cd /srv && git status',
-            'cd /srv && git diff',
-            'cd /srv && git log -1',
-            'cd /srv && git config --list | grep autocrlf'
+            'mkdir -p /srv/secrets',
+            'chmod 700 /srv/secrets',
+            'mkdir -p /opt/bible'
         ]
         
         for cmd in commands:
-            print(f"--- {cmd} ---")
-            si, so, se = ssh.exec_command(cmd)
-            print(so.read().decode('utf-8'))
-            print(se.read().decode('utf-8'))
+            print(f"Executing: {cmd}")
+            ssh.exec_command(cmd)
             
         ssh.close()
+        print("Infrastructure initialized successfully.")
     except Exception as e:
         print(f"ERROR: {e}")
 
 if __name__ == "__main__":
-    inspect_git_drift()
+    init_secrets_infra()

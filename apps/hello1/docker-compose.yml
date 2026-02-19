@@ -3,7 +3,7 @@ services:
     container_name: hello1-service
     image: nginx:1.27-alpine # Alpine includes wget for healthchecks
     restart: unless-stopped
-    env_file: .env
+    env_file: /srv/secrets/hello1.env
 
     # 🔗 Network: Attach to external Traefik proxy
     networks:
