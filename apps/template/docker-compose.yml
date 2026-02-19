@@ -29,8 +29,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      # Parameterized via .env
-      - "traefik.http.routers.app-name.rule=Host(`${DOMAIN_NAME}`)"
+      # Change 'app-subdomain' to your actual subdomain
+      - "traefik.http.routers.app-name.rule=Host(`app-subdomain.valhallala.com`)"
       - "traefik.http.routers.app-name.entrypoints=websecure"
       - "traefik.http.routers.app-name.tls=true"
       - "traefik.http.routers.app-name.tls.certresolver=letsencrypt"
@@ -43,7 +43,3 @@ services:
 networks:
   proxy:
     external: true
-
-volumes:
-  app-data:
-    name: app-name-data

@@ -30,7 +30,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
       # Parameterized via .env
-      - "traefik.http.routers.hello1.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.hello1.rule=Host(`hello1.valhallala.com`)"
       - "traefik.http.routers.hello1.entrypoints=websecure"
       - "traefik.http.routers.hello1.tls=true"
       - "traefik.http.routers.hello1.tls.certresolver=letsencrypt"

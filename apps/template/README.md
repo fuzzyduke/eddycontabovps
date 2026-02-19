@@ -23,8 +23,8 @@ Standardized boilerplate for deploying applications to the Eddy VPS using `deplo
    - `volumes` (named volume)
 
 3. **Set your Subdomain**:
-   In `.env`, update the `DOMAIN_NAME` variable. The `docker-compose.yml` uses:
-   `- "traefik.http.routers.your-app-name.rule=Host(\`${DOMAIN_NAME}\`)"`
+   In `docker-compose.yml`, update the Traefik host rule label manually:
+   `- "traefik.http.routers.your-app-name.rule=Host(\`your-subdomain.valhallala.com\`)"`
 
 
 4. **Add Secrets**:
